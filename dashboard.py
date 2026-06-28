@@ -1228,16 +1228,31 @@ with tab_earnings:
 
         st.markdown("<br>", unsafe_allow_html=True)
 
+        # ── Attach trade counts ───────────────────────────────────────────────
+        trade_counts = (
+            closed_all.groupby("ticker")
+            .size()
+            .reset_index(name="trade_count")
+        )
+        earn_df = earn_df.merge(trade_counts, on="ticker", how="left")
+        earn_df["trade_count"] = earn_df["trade_count"].fillna(0).astype(int)
+
         # ── Filter controls ───────────────────────────────────────────────────
-        fc1, fc2, fc3 = st.columns([2, 2, 3])
+        fc1, fc2, fc3, fc4 = st.columns([2, 2, 2, 2])
         window_opt = fc1.selectbox(
             "Show earnings within",
             ["All tickers", "Next 7 days", "Next 30 days", "Next 90 days", "Upcoming only"],
         )
-        # Optionally restrict to tickers the user actually traded
         traded_tickers = sorted(closed_all["ticker"].dropna().unique().tolist())
         show_traded = fc2.checkbox("Traded tickers only", value=False)
-        search_ticker = fc3.text_input("Search ticker", "").upper().strip()
+        top_n_opt = fc3.selectbox("Quick filter", ["All", "Top 10 traded", "Top 30 traded", "Top 50 traded"])
+        search_ticker = fc4.text_input("Search ticker", "").upper().strip()
+
+        sort_opt = st.radio(
+            "Sort by",
+            ["Days to earnings", "Most traded", "Ticker (A–Z)"],
+            horizontal=True,
+        )
 
         view = earn_df.copy()
 
@@ -1255,6 +1270,20 @@ with tab_earnings:
             view = view[view["days_away"].fillna(999) <= 90]
         elif window_opt == "Upcoming only":
             view = view[view["next_earnings"].notna()]
+
+        if top_n_opt != "All":
+            n = int(top_n_opt.split()[1])
+            top_tickers = (
+                trade_counts.nlargest(n, "trade_count")["ticker"].tolist()
+            )
+            view = view[view["ticker"].isin(top_tickers)]
+
+        if sort_opt == "Days to earnings":
+            view = view.sort_values("days_away", na_position="last")
+        elif sort_opt == "Most traded":
+            view = view.sort_values("trade_count", ascending=False)
+        else:
+            view = view.sort_values("ticker")
 
         st.caption(f"{len(view):,} tickers shown")
 
@@ -1306,7 +1335,7 @@ with tab_earnings:
                 return f"🟡 {d}d"
             return f"🟢 {d}d"
 
-        tbl = view[["ticker", "next_earnings", "days_away", "last_earnings", "total_dates"]].copy()
+        tbl = view[["ticker", "trade_count", "next_earnings", "days_away", "last_earnings", "total_dates"]].copy()
         tbl["next_earnings"] = tbl["next_earnings"].apply(
             lambda v: str(v) if pd.notna(v) else "—"
         )
@@ -1316,6 +1345,7 @@ with tab_earnings:
         tbl["days_away"] = tbl["days_away"].apply(_days_label)
         tbl = tbl.rename(columns={
             "ticker": "Ticker",
+            "trade_count": "Trades",
             "next_earnings": "Next Earnings",
             "days_away": "Days Away",
             "last_earnings": "Last Earnings",
