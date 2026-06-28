@@ -1,6 +1,15 @@
 # Personal trade data — never commit
 data/
-output/
+
+# Unneeded output files
+output/all_transactions.csv
+output/by_account.csv
+output/by_close_method.csv
+output/by_dte_bucket.csv
+output/by_strategy.csv
+output/by_ticker.csv
+output/cv_results.csv
+output/feature_importance.csv
 
 # Secrets
 .env
