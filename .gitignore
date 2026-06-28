@@ -18,7 +18,7 @@ output/feature_importance.csv
 models/
 
 # Caches
-.earnings_cache.json
+# .earnings_cache.json  — included in repo for cloud deployment
 data/cache/
 __pycache__/
 **/__pycache__/
