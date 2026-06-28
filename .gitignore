@@ -1,0 +1,28 @@
+# Personal trade data — never commit
+data/
+output/
+
+# Secrets
+.env
+
+# Trained models (large binaries)
+models/
+
+# Caches
+.earnings_cache.json
+data/cache/
+__pycache__/
+**/__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Editor / OS
+.DS_Store
+*.swp
+*.swo
+.vscode/
+.idea/
+
+# Claude / Codex local settings
+.claude/
+.codex/
